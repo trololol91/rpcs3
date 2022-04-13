@@ -56,7 +56,7 @@ void debugger_list::ShowAddress(u32 addr, bool select_addr, bool force)
 {
 	auto IsBreakpoint = [this](u32 pc)
 	{
-		return m_cpu && m_cpu->id_type() == 1 && m_breakpoint_handler->HasBreakpoint(pc);
+		return m_cpu && m_cpu->id_type() == 1 && m_breakpoint_handler->HasBreakpoint(pc, breakpoint_types::bp_exec);
 	};
 
 	bool center_pc = m_gui_settings->GetValue(gui::d_centerPC).toBool();

@@ -2,29 +2,40 @@
 
 extern bool ppu_breakpoint(u32 loc, bool is_adding);
 
-bool breakpoint_handler::HasBreakpoint(u32 loc) const
+bool breakpoint_handler::IsBreakOnBPM() const
 {
-	return m_breakpoints.contains(loc);
+	return m_break_on_bpm;
 }
 
-bool breakpoint_handler::AddBreakpoint(u32 loc)
+bool breakpoint_handler::HasBreakpoint(u32 loc, bs_t<breakpoint_types> type) const
 {
-	if (!ppu_breakpoint(loc, true))
+	return m_breakpoints.contains(loc) && ((m_breakpoints.at(loc) & type) == type);
+}
+
+bool breakpoint_handler::AddBreakpoint(u32 loc, bs_t<breakpoint_types> type)
+{
+	if (type & breakpoint_types::bp_exec)
 	{
-		return false;
+		if (!ppu_breakpoint(loc, true))
+		{
+			return false;
+		}
 	}
 
-	ensure(m_breakpoints.insert(loc).second);
+	ensure(m_breakpoints.insert({loc, type}).second);
 	return true;
 }
 
-bool breakpoint_handler::RemoveBreakpoint(u32 loc)
+bool breakpoint_handler::RemoveBreakpoint(u32 loc, bs_t<breakpoint_types> type)
 {
 	if (m_breakpoints.erase(loc) == 0)
 	{
 		return false;
 	}
 
-	ensure(ppu_breakpoint(loc, false));
+	if (type == breakpoint_types::bp_exec)
+	{
+		ensure(ppu_breakpoint(loc, false));
+	}
 	return true;
 }

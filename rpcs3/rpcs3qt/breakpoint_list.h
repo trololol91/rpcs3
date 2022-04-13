@@ -3,10 +3,17 @@
 #include "util/types.hpp"
 
 #include <QListWidget>
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QLineEdit>
+#include <QLabel>
+#include <QComboBox>
+#include <QPushButton>
+
+#include "breakpoint_handler.h"
 
 class CPUDisAsm;
 class cpu_thread;
-class breakpoint_handler;
 
 class breakpoint_list : public QListWidget
 {
@@ -16,8 +23,9 @@ public:
 	breakpoint_list(QWidget* parent, breakpoint_handler* handler);
 	void UpdateCPUData(cpu_thread* cpu, CPUDisAsm* disasm);
 	void ClearBreakpoints();
-	bool AddBreakpoint(u32 pc);
+	bool AddBreakpoint(u32 pc, bs_t<breakpoint_types> type);
 	void RemoveBreakpoint(u32 addr);
+	void ShowAddBreakpointWindow();
 
 	QColor m_text_color_bp;
 	QColor m_color_bp;

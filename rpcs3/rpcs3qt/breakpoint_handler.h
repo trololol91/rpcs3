@@ -1,13 +1,15 @@
 #pragma once
 
 #include "util/types.hpp"
-#include <set>
+#include "Utilities/bit_set.h"
+#include <map>
 
 enum class breakpoint_types
 {
 	bp_read = 0x1,
 	bp_write = 0x2,
 	bp_exec = 0x4,
+	__bitset_enum_max
 };
 
 /*
@@ -20,24 +22,29 @@ public:
 	breakpoint_handler() = default;
 	~breakpoint_handler() = default;
 
+	bool IsBreakOnBPM() const;
+
 	/**
 	* Returns true iff breakpoint exists at loc.
 	* TODO: Add arg for flags, gameid, and maybe even thread if it should be thread local breakpoint.... breakpoint struct is probably what'll happen
 	*/
-	bool HasBreakpoint(u32 loc) const;
+	bool HasBreakpoint(u32 loc, bs_t<breakpoint_types> type) const;
 
 	/**
 	* Returns true if added successfully. TODO: flags
 	*/
-	bool AddBreakpoint(u32 loc);
+	bool AddBreakpoint(u32 loc, bs_t<breakpoint_types> type);
 
 	/**
 	* Returns true if removed breakpoint at loc successfully.
 	*/
-	bool RemoveBreakpoint(u32 loc);
+	bool RemoveBreakpoint(u32 loc, bs_t<breakpoint_types> type);
 
 private:
 	// TODO : generalize to hold multiple games and handle flags.Probably do : std::map<std::string (gameid), std::set<breakpoint>>.
 	// Although, externally, they'll only be accessed by loc (I think) so a map of maps may also do?
-	std::set<u32> m_breakpoints; //! Holds all breakpoints.
+	std::map<u32, bs_t<breakpoint_types>> m_breakpoints; //! Holds all breakpoints.
+	bool m_break_on_bpm = false;
 };
+
+extern breakpoint_handler *g_breakpoint_handler;
