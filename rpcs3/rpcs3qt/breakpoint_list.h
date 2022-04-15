@@ -3,12 +3,6 @@
 #include "util/types.hpp"
 
 #include <QListWidget>
-#include <QDialog>
-#include <QVBoxLayout>
-#include <QLineEdit>
-#include <QLabel>
-#include <QComboBox>
-#include <QPushButton>
 
 #include "breakpoint_handler.h"
 
@@ -38,7 +32,7 @@ private Q_SLOTS:
 	void OnBreakpointListRightClicked(const QPoint &pos);
 	void OnBreakpointListDelete();
 private:
-	breakpoint_handler* m_breakpoint_handler;
+	breakpoint_handler* m_breakpoint_handler = nullptr;
 	QMenu* m_context_menu = nullptr;
 	QAction* m_delete_action;
 	cpu_thread* m_cpu = nullptr;

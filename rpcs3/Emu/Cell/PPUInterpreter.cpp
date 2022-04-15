@@ -27,15 +27,15 @@
 
 void ppubreak(ppu_thread& ppu)
 {
-	if (!g_breakpoint_handler->IsBreakOnBPM()) return;
+	if (!g_breakpoint_handler.IsBreakOnBPM()) return;
 
 	bool status = ppu.state.test_and_set(cpu_flag::dbg_pause);
 #ifdef WITH_GDB_DEBUGGER
 	fxm::get<GDBDebugServer>()->notify();
 #endif
-	if (!status && ppu.check_state())
+	if (!status)
 	{
-		return;
+		ppu.check_state();
 	}
 }
 
@@ -439,7 +439,7 @@ auto ppu_feed_data(ppu_thread& ppu, u64 addr)
 
 	auto value = vm::_ref<T>(vm::cast(addr));
 
-	if (g_breakpoint_handler->HasBreakpoint(addr, breakpoint_types::bp_read))
+	if (g_breakpoint_handler.HasBreakpoint(addr, breakpoint_types::bp_read))
 	{
 		debugbp_log.success("BPMR: breakpoint reading 0x%x at 0x%x", value, addr);
 		ppubreak(ppu);

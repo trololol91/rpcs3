@@ -3,6 +3,7 @@
 #include "util/types.hpp"
 #include "Utilities/bit_set.h"
 #include <map>
+#include "Utilities/mutex.h"
 
 enum class breakpoint_types
 {
@@ -23,12 +24,13 @@ public:
 	~breakpoint_handler() = default;
 
 	bool IsBreakOnBPM() const;
+	void SetBreakOnBPM(bool break_on_bpm);
 
 	/**
 	* Returns true iff breakpoint exists at loc.
 	* TODO: Add arg for flags, gameid, and maybe even thread if it should be thread local breakpoint.... breakpoint struct is probably what'll happen
 	*/
-	bool HasBreakpoint(u32 loc, bs_t<breakpoint_types> type) const;
+	bool HasBreakpoint(u32 loc, bs_t<breakpoint_types> type);
 
 	/**
 	* Returns true if added successfully. TODO: flags
@@ -38,13 +40,14 @@ public:
 	/**
 	* Returns true if removed breakpoint at loc successfully.
 	*/
-	bool RemoveBreakpoint(u32 loc, bs_t<breakpoint_types> type);
+	bool RemoveBreakpoint(u32 loc);
 
 private:
 	// TODO : generalize to hold multiple games and handle flags.Probably do : std::map<std::string (gameid), std::set<breakpoint>>.
 	// Although, externally, they'll only be accessed by loc (I think) so a map of maps may also do?
+	shared_mutex mutex_breakpoints;
 	std::map<u32, bs_t<breakpoint_types>> m_breakpoints; //! Holds all breakpoints.
 	bool m_break_on_bpm = false;
 };
 
-extern breakpoint_handler *g_breakpoint_handler;
+extern breakpoint_handler g_breakpoint_handler;

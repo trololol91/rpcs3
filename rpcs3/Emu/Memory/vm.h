@@ -285,7 +285,7 @@ namespace vm
 	{
 		g_base_addr[addr] = value;
 
-		if (ppu && g_breakpoint_handler->HasBreakpoint(addr, breakpoint_types::bp_write))
+		if (ppu && g_breakpoint_handler.HasBreakpoint(addr, breakpoint_types::bp_write))
 		{
 			debugbp_log.success("BPMW: breakpoint writing(1) 0x%x at 0x%x", value, addr);
 			ppubreak(*ppu);
@@ -325,7 +325,7 @@ namespace vm
 		{
 			_ref<u16>(addr) = value;
 
-			if (ppu && g_breakpoint_handler->HasBreakpoint(addr, breakpoint_types::bp_write))
+			if (ppu && g_breakpoint_handler.HasBreakpoint(addr, breakpoint_types::bp_write))
 			{
 				debugbp_log.success("BPMW: breakpoint writing(1) 0x%x at 0x%x", value, addr);
 				ppubreak(*ppu);
@@ -341,7 +341,7 @@ namespace vm
 		{
 			_ref<u32>(addr) = value;
 
-			if (ppu && g_breakpoint_handler->HasBreakpoint(addr, breakpoint_types::bp_write))
+			if (ppu && g_breakpoint_handler.HasBreakpoint(addr, breakpoint_types::bp_write))
 			{
 				debugbp_log.success("BPMW: breakpoint writing(1) 0x%x at 0x%x", value, addr);
 				ppubreak(*ppu);
@@ -357,7 +357,7 @@ namespace vm
 		{
 			_ref<u64>(addr) = value;
 
-			if (ppu && g_breakpoint_handler->HasBreakpoint(addr, breakpoint_types::bp_write))
+			if (ppu && g_breakpoint_handler.HasBreakpoint(addr, breakpoint_types::bp_write))
 			{
 				debugbp_log.success("BPMW: breakpoint writing(1) 0x%x at 0x%x", value, addr);
 				ppubreak(*ppu);

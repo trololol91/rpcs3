@@ -6,6 +6,13 @@
 
 #include <QMenu>
 #include <QMessageBox>
+#include <QVBoxLayout>
+#include <QLineEdit>
+#include <QLabel>
+#include <QComboBox>
+#include <QPushButton>
+#include <QDialogButtonBox>
+
 
 constexpr auto qstr = QString::fromStdString;
 
@@ -43,14 +50,14 @@ void breakpoint_list::ClearBreakpoints()
 	{
 		auto* currentItem = takeItem(0);
 		const u32 loc     = currentItem->data(Qt::UserRole).value<u32>();
-		m_breakpoint_handler->RemoveBreakpoint(loc, breakpoint_types::bp_exec);
+		m_breakpoint_handler->RemoveBreakpoint(loc);
 		delete currentItem;
 	}
 }
 
 void breakpoint_list::RemoveBreakpoint(u32 addr)
 {
-	m_breakpoint_handler->RemoveBreakpoint(addr, breakpoint_types::bp_exec);
+	m_breakpoint_handler->RemoveBreakpoint(addr);
 
 	for (int i = 0; i < count(); i++)
 	{
@@ -73,27 +80,27 @@ bool breakpoint_list::AddBreakpoint(u32 pc, bs_t<breakpoint_types> type)
 		return false;
 	}
 
-	QString breakpointItemText;
+	QString breakpoint_item_text;
 	if (type == breakpoint_types::bp_exec)
 	{
 		m_disasm->disasm(m_disasm->dump_pc = pc);
-		breakpointItemText = qstr(m_disasm->last_opcode);
-		breakpointItemText.remove(10, 13);
+		breakpoint_item_text = qstr(m_disasm->last_opcode);
+		breakpoint_item_text.remove(10, 13);
 	}
 	else if (type == breakpoint_types::bp_read)
 	{
-		breakpointItemText = QString("BPMR:  0x%1").arg(pc, 8, 16, QChar('0'));
+		breakpoint_item_text = QString("BPMR:  0x%1").arg(pc, 8, 16, QChar('0'));
 	}
 	else if (type == breakpoint_types::bp_write)
 	{
-		breakpointItemText = QString("BPMW:  0x%1").arg(pc, 8, 16, QChar('0'));
+		breakpoint_item_text = QString("BPMW:  0x%1").arg(pc, 8, 16, QChar('0'));
 	}
 	else if (type == (breakpoint_types::bp_read + breakpoint_types::bp_write))
 	{
-		breakpointItemText = QString("BPMRW: 0x%1").arg(pc, 8, 16, QChar('0'));
+		breakpoint_item_text = QString("BPMRW: 0x%1").arg(pc, 8, 16, QChar('0'));
 	}
 
-	QListWidgetItem* breakpoint_item = new QListWidgetItem(breakpointItemText);
+	QListWidgetItem* breakpoint_item = new QListWidgetItem(breakpoint_item_text);
 	breakpoint_item->setForeground(m_text_color_bp);
 	breakpoint_item->setBackground(m_color_bp);
 	breakpoint_item->setData(Qt::UserRole, pc);
@@ -175,9 +182,15 @@ void breakpoint_list::OnBreakpointListRightClicked(const QPoint& pos)
 	}
 
 	QAction* m_addbp = new QAction(tr("Add Breakpoint"), this);
-	addAction(m_addbp);
 	connect(m_addbp, &QAction::triggered, this, &breakpoint_list::ShowAddBreakpointWindow);
 	m_context_menu->addAction(m_addbp);
+
+	QAction* m_tglbpmbreak = new QAction(m_breakpoint_handler->IsBreakOnBPM() ? tr("Disable BPM") : tr("Enable BPM"), this);
+	connect(m_tglbpmbreak, &QAction::triggered, [&]
+		{
+			m_breakpoint_handler->SetBreakOnBPM(!m_breakpoint_handler->IsBreakOnBPM());
+		});
+	m_context_menu->addAction(m_tglbpmbreak);
 
 	m_context_menu->exec(viewport()->mapToGlobal(pos));
 	m_context_menu->deleteLater();
@@ -199,17 +212,17 @@ void breakpoint_list::OnBreakpointListDelete()
 
 void breakpoint_list::ShowAddBreakpointWindow()
 {
-	QDialog* diag = new QDialog(this);
+	QDialog* dlg = new QDialog(this);
 
-	diag->setWindowTitle(tr("Add a breakpoint"));
-	diag->setModal(true);
+	dlg->setWindowTitle(tr("Add a breakpoint"));
+	dlg->setModal(true);
 
 	QVBoxLayout* vbox_panel = new QVBoxLayout();
 
 	QHBoxLayout* hbox_top = new QHBoxLayout();
 	QLabel* l_address     = new QLabel(tr("Address"));
 	QLineEdit* t_address  = new QLineEdit();
-	t_address->setPlaceholderText("Address here");
+	t_address->setPlaceholderText(tr("Address here"));
 	t_address->setFocus();
 
 	hbox_top->addWidget(l_address);
@@ -219,31 +232,30 @@ void breakpoint_list::ShowAddBreakpointWindow()
 	QHBoxLayout* hbox_bot = new QHBoxLayout();
 	QComboBox* co_bptype  = new QComboBox(this);
 	QStringList qstr_breakpoint_types;
-	qstr_breakpoint_types << "Memory Read"
-						  << "Memory Write"
-						  << "Memory Read&Write"
-						  << "Execution";
+	qstr_breakpoint_types << tr("Memory Read")
+						  << tr("Memory Write")
+						  << tr("Memory Read&Write")
+						  << tr("Execution");
 	co_bptype->addItems(qstr_breakpoint_types);
 
 	hbox_bot->addWidget(co_bptype);
 	vbox_panel->addLayout(hbox_bot);
 
 	QHBoxLayout* hbox_buttons = new QHBoxLayout();
-	QPushButton* b_cancel     = new QPushButton(tr("Cancel"));
-	QPushButton* b_addbp      = new QPushButton(tr("Add"));
+	QDialogButtonBox* button_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	button_box->button(QDialogButtonBox::Ok)->setText(tr("Add"));
 
-	hbox_buttons->addWidget(b_cancel);
-	hbox_buttons->addWidget(b_addbp);
+	hbox_buttons->addWidget(button_box);
 	vbox_panel->addLayout(hbox_buttons);
 
-	diag->setLayout(vbox_panel);
+	dlg->setLayout(vbox_panel);
 
-	connect(b_cancel, &QAbstractButton::clicked, diag, &QDialog::reject);
-	connect(b_addbp, &QAbstractButton::clicked, diag, &QDialog::accept);
+	connect(button_box, &QDialogButtonBox::accepted, dlg, &QDialog::accept);
+	connect(button_box, &QDialogButtonBox::rejected, dlg, &QDialog::reject);
 
-	diag->move(QCursor::pos());
+	dlg->move(QCursor::pos());
 
-	if (diag->exec() == QDialog::Accepted)
+	if (dlg->exec() == QDialog::Accepted)
 	{
 		if (!t_address->text().isEmpty())
 		{
@@ -273,5 +285,5 @@ void breakpoint_list::ShowAddBreakpointWindow()
 		}
 	}
 
-	diag->deleteLater();
+	dlg->deleteLater();
 }

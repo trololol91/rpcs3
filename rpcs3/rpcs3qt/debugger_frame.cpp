@@ -40,7 +40,7 @@ constexpr auto s_pause_flags = cpu_flag::dbg_pause + cpu_flag::dbg_global_pause;
 
 extern atomic_t<bool> g_debugger_pause_all_threads_on_bp;
 
-breakpoint_handler *g_breakpoint_handler = nullptr;
+breakpoint_handler g_breakpoint_handler = breakpoint_handler();
 
 extern bool is_using_interpreter(u32 id_type)
 {
@@ -82,10 +82,8 @@ debugger_frame::debugger_frame(std::shared_ptr<gui_settings> gui_settings, QWidg
 	QHBoxLayout* hbox_b_main = new QHBoxLayout();
 	hbox_b_main->setContentsMargins(0, 0, 0, 0);
 
-	m_breakpoint_handler = new breakpoint_handler();
+	m_breakpoint_handler = &g_breakpoint_handler;
 	m_breakpoint_list = new breakpoint_list(this, m_breakpoint_handler);
-
-	g_breakpoint_handler = m_breakpoint_handler;
 
 	m_debugger_list = new debugger_list(this, m_gui_settings, m_breakpoint_handler);
 	m_debugger_list->installEventFilter(this);
@@ -967,7 +965,7 @@ void debugger_frame::DoUpdate()
 	// Check if we need to disable a step over bp
 	if (const auto cpu0 = get_cpu(); cpu0 && m_last_step_over_breakpoint != umax && cpu0->get_pc() == m_last_step_over_breakpoint)
 	{
-		m_breakpoint_handler->RemoveBreakpoint(m_last_step_over_breakpoint, breakpoint_types::bp_exec);
+		m_breakpoint_handler->RemoveBreakpoint(m_last_step_over_breakpoint);
 		m_last_step_over_breakpoint = -1;
 	}
 
@@ -1126,7 +1124,7 @@ void debugger_frame::DoStep(bool step_over)
 				// This can happen when the user steps over a branch that doesn't return to itself
 				if (m_last_step_over_breakpoint != umax)
 				{
-					m_breakpoint_handler->RemoveBreakpoint(next_instruction_pc, breakpoint_types::bp_exec);
+					m_breakpoint_handler->RemoveBreakpoint(next_instruction_pc);
 				}
 
 				m_last_step_over_breakpoint = next_instruction_pc;
